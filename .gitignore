@@ -1,0 +1,22 @@
+# ---- 操作系统 ----
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- 编辑器 / IDE ----
+.vs/
+.idea/
+*.suo
+*.user
+
+# ---- 日志与临时文件 ----
+*.log
+tmp/
+temp/
+
+# ---- 环境变量与密钥（切勿提交）----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
