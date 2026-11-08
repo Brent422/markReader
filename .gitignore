@@ -9,6 +9,13 @@ Desktop.ini
 *.suo
 *.user
 
+# ---- 依赖与构建产物 ----
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.local
+
 # ---- 日志与临时文件 ----
 *.log
 tmp/
