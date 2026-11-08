@@ -21,6 +21,9 @@ coverage/
 tmp/
 temp/
 
+# ---- 本地测试样本 ----
+samples/
+
 # ---- 环境变量与密钥（切勿提交）----
 .env
 .env.*
