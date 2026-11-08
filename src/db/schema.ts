@@ -10,45 +10,35 @@ export interface BookRow {
   encoding: string
   /** 全文字符数 */
   charCount: number
+  /** 全文内容 */
+  text: string
   createdAt: number
 }
 
 export interface ProgressRow {
   bookId: string
-  /** 当前章节序号 */
-  chapterIndex: number
-  /** 章内字符偏移 */
+  /** 全文字符偏移，代表读到哪个位置 */
   charOffset: number
   updatedAt: number
-}
-
-export interface AnnotationRow {
-  id: string
-  bookId: string
-  chapterIndex: number
-  /** 章内起始字符偏移 */
-  start: number
-  /** 章内结束字符偏移 */
-  end: number
-  /** 被划线的原文 */
-  text: string
-  /** 用户笔记 */
-  note: string
-  color: string
-  createdAt: number
 }
 
 class MarkReaderDB extends Dexie {
   books!: Table<BookRow, string>
   progress!: Table<ProgressRow, string>
-  annotations!: Table<AnnotationRow, string>
 
   constructor() {
     super('mark-reader')
+    // v1：早期结构，含章节进度与批注表
     this.version(1).stores({
       books: 'id, createdAt',
       progress: 'bookId',
       annotations: 'id, bookId, chapterIndex',
+    })
+    // v2：移除章节与批注，进度简化为单一字符偏移
+    this.version(2).stores({
+      books: 'id, createdAt',
+      progress: 'bookId',
+      annotations: null,
     })
   }
 }

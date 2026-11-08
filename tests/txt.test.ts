@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
-  chapterBody,
   decodeTxt,
   detectEncoding,
   normalizeNewlines,
+  offsetFromRatio,
   progressPercent,
-  splitChapters,
+  ratioFromOffset,
+  titleFromFileName,
 } from '../src/core/txt'
 
 function bytesOf(values: number[]): ArrayBuffer {
@@ -52,56 +53,19 @@ describe('normalizeNewlines', () => {
   })
 })
 
-describe('splitChapters', () => {
-  const sample = [
-    '书名：测试小说',
-    '',
-    '第一章 开端',
-    '第一章的正文内容。',
-    '',
-    '第二章 发展',
-    '第二章的正文内容。',
-  ].join('\n')
-
-  it('识别章节标题并保留标题前的「开始」章', () => {
-    const chapters = splitChapters(sample)
-    expect(chapters.map((c) => c.title)).toEqual(['开始', '第一章 开端', '第二章 发展'])
+describe('titleFromFileName', () => {
+  it('去掉 .txt 后缀作为书名', () => {
+    expect(titleFromFileName('三体.txt')).toBe('三体')
+    expect(titleFromFileName('a.TXT')).toBe('a')
   })
 
-  it('章节偏移首尾相接且覆盖全文', () => {
-    const chapters = splitChapters(sample)
-    expect(chapters[0].start).toBe(0)
-    expect(chapters[chapters.length - 1].end).toBe(sample.length)
-    for (let i = 0; i < chapters.length - 1; i += 1) {
-      expect(chapters[i].end).toBe(chapters[i + 1].start)
-    }
+  it('没有后缀时保留原名', () => {
+    expect(titleFromFileName('未命名文稿')).toBe('未命名文稿')
   })
 
-  it('没有章节标题时整本书作为一章', () => {
-    const plain = '只是一段普通正文，没有任何章节标题。'
-    const chapters = splitChapters(plain)
-    expect(chapters).toHaveLength(1)
-    expect(chapters[0]).toMatchObject({ index: 0, start: 0, end: plain.length })
-  })
-
-  it('识别「第X回」「序章」「番外」等标题', () => {
-    const text = ['序章', '引子内容。', '第五回 风波', '回目内容。', '番外一', '番外内容。'].join('\n')
-    const titles = splitChapters(text).map((c) => c.title)
-    expect(titles).toEqual(['序章', '第五回 风波', '番外一'])
-  })
-
-  it('正文中间出现的「第一章」字样不会被误判为标题', () => {
-    const text = ['第一章 真实标题', '他写道：第一章的重要性在于开篇。'].join('\n')
-    const chapters = splitChapters(text)
-    expect(chapters).toHaveLength(1)
-  })
-})
-
-describe('chapterBody', () => {
-  it('去掉章首的标题行，只返回正文', () => {
-    const text = ['第一章 开端', '正文第一段。', '正文第二段。'].join('\n')
-    const [chapter] = splitChapters(text)
-    expect(chapterBody(text, chapter)).toBe('正文第一段。\n正文第二段。')
+  it('空文件名回退为「未命名」', () => {
+    expect(titleFromFileName('.txt')).toBe('未命名')
+    expect(titleFromFileName('   ')).toBe('未命名')
   })
 })
 
@@ -116,5 +80,27 @@ describe('progressPercent', () => {
     expect(progressPercent(1000, -10)).toBe(0)
     expect(progressPercent(1000, 2000)).toBe(100)
     expect(progressPercent(0, 0)).toBe(0)
+  })
+})
+
+describe('比例与偏移互转', () => {
+  it('偏移转比例', () => {
+    expect(ratioFromOffset(1000, 250)).toBeCloseTo(0.25)
+    expect(ratioFromOffset(1000, 0)).toBe(0)
+    expect(ratioFromOffset(1000, 5000)).toBe(1)
+    expect(ratioFromOffset(0, 100)).toBe(0)
+  })
+
+  it('比例转偏移', () => {
+    expect(offsetFromRatio(1000, 0.25)).toBe(250)
+    expect(offsetFromRatio(1000, -1)).toBe(0)
+    expect(offsetFromRatio(1000, 2)).toBe(1000)
+    expect(offsetFromRatio(0, 0.5)).toBe(0)
+  })
+
+  it('两者互为逆运算（取整误差内）', () => {
+    const length = 12345
+    const offset = 4567
+    expect(offsetFromRatio(length, ratioFromOffset(length, offset))).toBe(offset)
   })
 })
